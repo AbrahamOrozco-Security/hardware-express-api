@@ -53,6 +53,46 @@ const productosController = {
         productos.splice(indice, 1);
         ProductoModel.guardar(productos);
         res.status(204).send(); // 204 No Content
+    },
+
+    // PUT /productos/:id
+    actualizar: (req, res) => {
+        const id = parseInt(req.params.id);
+        const { nombre, precio } = req.body;
+        let productos = ProductoModel.leer();
+
+        const indice = productos.findIndex(p => p.id === id);
+
+        // Validación: El producto debe existir (404 Not Found)
+        if (indice === -1) {
+            return res.status(404).json({ mensaje: "Producto no encontrado. El ID no existe" });
+        }
+
+        // Validación: Campos obligatorios y Tipos de datos
+        if (!nombre || typeof nombre !== 'string' || precio === undefined || typeof precio !== 'number') {
+            return res.status(400).json({ mensaje: "Nombre (string) y precio (number) son obligatorios" });
+        }
+
+        // Validación: Precios lógicos (> 0)
+        if (precio <= 0) {
+            return res.status(400).json({ mensaje: "El precio debe ser un valor positivo mayor a cero" });
+        }
+
+        // Validación: No Duplicados (excluyendo el producto actual)
+        const duplicado = productos.find(p => p.nombre.toLowerCase() === nombre.toLowerCase() && p.id !== id);
+        if (duplicado) {
+            return res.status(400).json({ mensaje: `El producto '${nombre}' ya existe en el inventario` });
+        }
+
+        // Actualizar producto
+        productos[indice] = {
+            ...productos[indice],
+            nombre,
+            precio
+        };
+
+        ProductoModel.guardar(productos);
+        res.status(200).json(productos[indice]); // 200 OK
     }
 };
 
